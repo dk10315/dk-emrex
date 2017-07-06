@@ -1,13 +1,12 @@
 package dk.uds.emrex.ncp;
 
-import junit.framework.TestCase;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import org.junit.Ignore;
 import org.junit.Test;
+
+import junit.framework.TestCase;
 
 /**
  * Created by marko.hollanti on 04/09/15.

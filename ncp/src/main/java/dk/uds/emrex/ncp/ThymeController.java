@@ -7,9 +7,13 @@ package dk.uds.emrex.ncp;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,12 +63,14 @@ public class ThymeController {
     @RequestMapping(value = "/ncp/review", method = RequestMethod.GET)
     public String ncpReview(@RequestParam(value = "courses", required = false) String[] courses,
             Model model) throws Exception {
+    	log.info("(ncp/review");
         return this.review(courses, model);
     }
 
     @RequestMapping(value = "/review", method = RequestMethod.GET)
     public String review(@RequestParam(value = "courses", required = false) String[] courses,
             Model model) throws Exception {
+    	log.info("/review");
         final WayfUser wayfUser = this.getCurrentUser();
 
         model.addAttribute("sessionId", context.getSession().getAttribute("sessionId"));
@@ -93,38 +99,43 @@ public class ThymeController {
 
         ElmoParser finalParser = ElmoParser.elmoParser(xmlString);
 
-        String source = "NCP";
-        String statisticalLogLine = generateStatisticalLogLine(finalParser, source);
-        StatisticalLogger.log(statisticalLogLine);
+        //String source = "NCP";
+        //String statisticalLogLine = generateStatisticalLogLine(finalParser, source);
+        //StatisticalLogger.log(statisticalLogLine);
 
         xmlString = dataSign.sign(xmlString.trim(), StandardCharsets.UTF_8);
-        if (courses != null) {
+        //if (courses != null) {
             model.addAttribute("returnCode", context.getSession().getAttribute("returnCode"));
             model.addAttribute("elmo", xmlString);
-        } else {
-            model.addAttribute("returnCode", "NCP_NO_RESULTS");
-            model.addAttribute("elmo", null);
-        }
+        //} else {
+        //    model.addAttribute("returnCode", "NCP_NO_RESULTS");
+        //    model.addAttribute("elmo", null);
+        //}
         model.addAttribute("buttonText", "Confirm selected results");
 
         model.addAttribute("buttonClass", "btn btn-success");
 
+        String logLine = getLogLineStr(parser, finalParser, true);
+        StatisticalLogger.log(logLine);
+        
         return "review";
 
     }
 
     private String getElmoXml(@RequestParam(value = "courses", required = false) String[] courses, ElmoParser parser) throws ParserConfigurationException {
-        String xmlString = courses==null ? parser.asXml() : parser.asXml(courses);
+        String xmlString = courses==null ? parser.asXml(new String[] {}) : parser.asXml(courses);
         return xmlString;
     }
 
     @RequestMapping(value = "/ncp/abort", method = RequestMethod.GET)
     public String smpabort(Model model) {
+    	log.info("/ncp/abort");
         return abort(model);
     }
 
     @RequestMapping(value = "/abort", method = RequestMethod.GET)
     public String abort(Model model) {
+    	log.info("/abort");
         // same submit button with ame url and color is used, but without Elmo
         model.addAttribute("sessionId", context.getSession().getAttribute("sessionId"));
         model.addAttribute("returnUrl", context.getSession().getAttribute("returnUrl"));
@@ -136,11 +147,13 @@ public class ThymeController {
 
     @RequestMapping(value = "/")
     public String ncp1(@ModelAttribute CustomRequest customRequest, HttpServletRequest request, Model model) {
+    	log.info("/");
         return this.greeting(customRequest, request, model);
     }
 
     @RequestMapping(value = "/ncp/")
     public String greeting(@ModelAttribute CustomRequest customRequest, HttpServletRequest request, Model model) {
+    	log.info("/ncp");
         final WayfUser wayfUser = this.getCurrentUser();
 
         log.info("/ncp/");
@@ -213,11 +226,12 @@ public class ThymeController {
                         context.getSession().setAttribute("elmo", parser);
 
                     }
-                    String personalLogLine = generatePersonalLogLine(customRequest, headerHandler, parser, wayfUser);
+                    String logLine = getLogLineStr(parser, null, false);
+                    //String personalLogLine = generatePersonalLogLine(customRequest, headerHandler, parser, wayfUser);
 
-                    String statisticalLogLine = generateStatisticalLogLine(parser, "NCP");
-                    StatisticalLogger.log(statisticalLogLine);
-                    PersonalLogger.log(personalLogLine);
+                    //String statisticalLogLine = generateStatisticalLogLine(parser, "NCP");
+                    StatisticalLogger.log(logLine);
+                    PersonalLogger.log(logLine);
                 }
                 return "norex";
 
@@ -231,6 +245,9 @@ public class ThymeController {
         return "norex";
     }
 
+    /**
+     * @deprecated Use getLogLineStr(...)
+     */
     private String generatePersonalLogLine(@ModelAttribute CustomRequest customRequest, ShibbolethHeaderHandler headerHandler, ElmoParser parser, WayfUser wayfUser) {
         String personalLogLine = "NCP\t" + customRequest.getSessionId();
         personalLogLine += "\t" + customRequest.getReturnUrl();
@@ -243,6 +260,9 @@ public class ThymeController {
         return personalLogLine;
     }
 
+    /**
+     * @deprecated Use getLogLineStr(...)
+     */
     private String generateStatisticalLogLine(ElmoParser parser, String source) throws Exception {
         String statisticalLogLine = source + "\t" + context.getSession().getAttribute("sessionId");
         statisticalLogLine += "\t" + context.getSession().getAttribute("returnUrl");
@@ -260,4 +280,33 @@ public class ThymeController {
         return (WayfUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
     
+	/**
+	 * Make log entry like descriped in
+	 * https://confluence.csc.fi/display/EMREX/Implementation+details:+NCP
+	 * 
+	 * @since EMREX-17
+	 * @author z6cxh
+	 */
+	private String getLogLineStr(ElmoParser parser, ElmoParser finalParser, boolean success) throws Exception {
+		final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+		HttpSession session = context.getSession();
+		String sessionId = session.getId();
+		long sessionTime = session.getCreationTime();
+		long ncpTime = session.getLastAccessedTime() - sessionTime;
+		Object returnUrl = session.getAttribute("returnUrl");
+		String countryCode = "DK";
+		Object heiId = this.getCurrentUser().getOrganizationId();
+		int coursesImported = parser != null ? parser.getCoursesCount() : 0;
+		float creditsImported = parser != null ? parser.getETCSCountAsFloat() : 0.0f;
+		int coursesExported = finalParser != null ? finalParser.getCoursesCount() : 0;
+		float creditsExporte = finalParser != null ? finalParser.getETCSCountAsFloat() : 0.0f;
+
+		Date sessionDate = new Date(sessionTime);
+		return String.format("%s\t%s\t%.1f\t%s\t%s\t%s\t%s\t%d\t%.1f\t%d\t%.1f ", sessionId, sdf.format(sessionDate),
+				(ncpTime / 60000.0), returnUrl, countryCode, (success ? "yes" : "no"), heiId, coursesImported,
+				creditsImported, coursesExported, creditsExporte);
+	}
+	
 }

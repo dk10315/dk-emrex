@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import javax.xml.bind.Marshaller;
 
-import org.apache.commons.lang.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

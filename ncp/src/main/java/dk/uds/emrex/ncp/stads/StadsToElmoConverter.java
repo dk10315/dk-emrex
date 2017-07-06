@@ -48,16 +48,18 @@ public class StadsToElmoConverter {
 			identifier.setValue(stadsReport.getIssuer().getIdentifier());
 			issuer.getIdentifier().add(identifier);
 			
-			identifier = new Elmo.Report.Issuer.Identifier();
-			identifier.setType("url");
-			identifier.setValue(stadsReport.getIssuer().getUrl());
-			issuer.getIdentifier().add(identifier);
+			//identifier = new Elmo.Report.Issuer.Identifier();
+			//identifier.setType("url");
+			//identifier.setValue(stadsReport.getIssuer().getUrl());
+			//issuer.getIdentifier().add(identifier);
 			
 			TokenWithOptionalLang title = new TokenWithOptionalLang();
 			title.setLang("en");
 			title.setValue(stadsReport.getIssuer().getTitle());
 			issuer.getTitle().add(title);
 			report.setIssuer(issuer);
+			
+			issuer.setUrl(stadsReport.getIssuer().getUrl());
 		} else {
 			Issuer issuer = new Elmo.Report.Issuer(); 
 			issuer.setCountry(CountryCode.DK);
@@ -143,9 +145,14 @@ public class StadsToElmoConverter {
 	private static Credit asElmo(
 			dk.uds.emrex.stads.wsdl.LearningOpportunitySpecification.Specifies.LearningOpportunityInstance.Credit stadsCredit) {
 		Credit credit = new Credit();
+		String scheme = stadsCredit.getScheme();
 
-		credit.setLevel(stadsCredit.getLevel());
-		credit.setScheme(stadsCredit.getScheme());
+		// EMREX-22 STADS return ECTS but elmo expect ects!
+		if ("ECTS".equals(scheme)) 
+			scheme = "ects";
+	
+//		credit.setLevel(stadsCredit.getLevel());
+		credit.setScheme(scheme);
 		credit.setValue(stadsCredit.getValue());
 
 		return credit;

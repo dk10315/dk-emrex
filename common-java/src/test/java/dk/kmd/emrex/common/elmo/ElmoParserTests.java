@@ -1,7 +1,16 @@
 package dk.kmd.emrex.common.elmo;
 
-import dk.kmd.emrex.common.util.TestUtil;
-import junit.framework.TestCase;
+import static org.junit.Assert.assertArrayEquals;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -10,17 +19,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
+import dk.kmd.emrex.common.util.TestUtil;
+import junit.framework.TestCase;
 
 
 /**

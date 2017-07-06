@@ -32,7 +32,6 @@ public class JsonController {
     @RequestMapping(value = "/elmo", method = RequestMethod.GET)
     @ResponseBody
     public Map<String, Object> fetchElmoXml(HttpServletRequest request) throws Exception {
-
         Map<String, Object> model = new HashMap<>();
         model.put("returnUrl", context.getSession().getAttribute("returnUrl"));
         model.put("sessionId", context.getSession().getAttribute("sessionId"));
@@ -98,13 +97,13 @@ public class JsonController {
     @ResponseBody
     public String getElmoJSON(
             @RequestParam(value = "courses", required = false) String[] courses) throws Exception {
-            log.info("Courses: [" + (courses==null? "null" : Arrays.stream(courses).reduce((a,b)-> a+", "+b).orElse(""))+']');
+        	log.info("Courses: [" + (courses==null? "null" : Arrays.stream(courses).reduce((a,b)-> a+", "+b).orElse(""))+']');
         try {
             final WayfUser user = getCurrentUser();
             Optional<Elmo> elmo = studyFetcher.fetchElmo(user.getOrganizationId(), user.getCpr());
             final ElmoParser parser = ElmoParser.elmoParser(elmo.get());
 
-            String jsonString = courses==null? parser.asJson() : parser.asJson(courses);
+            String jsonString = courses==null? parser.asJson(new String[]{}) : parser.asJson(courses);
             log.debug(courses==null?"Courses count: null":("Courses count: "+ courses.length));
             log.debug(jsonString);
             return jsonString;

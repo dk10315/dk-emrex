@@ -16,7 +16,7 @@ which is read from the classpath of the application.
 An example of the application.properties file: 
 
 - server.port = 8080
-- environment.url = http://dans-emrexws.kmd.dk
+- environment.url = https://dans-emrexws.kmd.dk
 - environment.port = 8000
 - return.url = http://localhost
 
@@ -44,3 +44,6 @@ For testing against prod the following command can be used:
 For testing against the test environment use the following command
 
 > java -jar -Dspring.profiles.active=test &lt;file_name&gt;.war
+
+### Url
+https://localhost:8080/smp

@@ -21,7 +21,7 @@ public class PDFGenTests extends TestCase {
     }
 
     private void generatePdf(String filename, String uri) throws Exception {
-        System.out.println(filename);
+        //System.out.println(filename);
         final String decodedXml = TestUtil.getFileContent(filename);
         new PdfGen().generatePdf(decodedXml, uri);
     }

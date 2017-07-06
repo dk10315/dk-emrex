@@ -7,7 +7,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.JAXBContext;
@@ -33,6 +35,8 @@ import https.github_com.emrex_eu.elmo_schemas.tree.v1.TokenWithOptionalLang;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 @Slf4j
 public class ElmoParser {
 
@@ -104,11 +108,41 @@ public class ElmoParser {
 		return xml;
 	}
 
+	/*
+	 * Get all learning opputinitys.
+	 * @since EMREX-23
+	 * @author z6cxh
+	 */
+	public String asXml() throws ParserConfigurationException {
+		String copyElmoString = getStringFromDoc(elmo);
+		Elmo copyElmo = asElmo(copyElmoString).get();
+		String xml = getStringFromDoc(copyElmo);
+		return xml;
+	}
+
 	public String asJson(String... courses) {
 		String jsonString = null;
 		try {
 			Elmo elmoCopy = asElmo(this.asXml()).get();
 			selectCourses(elmoCopy, Arrays.asList(courses));
+			jsonString = "{ \"elmo\" : " + asJson(elmoCopy) + " }";
+			log.debug(jsonString);
+		} catch (ParserConfigurationException e) {
+			log.error("Error marshalling Elmo", e);
+		}
+		return jsonString;
+	}
+	
+	/*
+	 * Get all learning opputinitys.
+	 * @since EMREX-23
+	 * @author z6cxh
+	 */
+	public String asJson() {
+		String jsonString = null;
+		try {
+			Elmo elmoCopy = asElmo(this.asXml()).get();
+		//	selectCourses(elmoCopy, Arrays.asList(courses));
 			jsonString = "{ \"elmo\" : " + asJson(elmoCopy) + " }";
 			log.debug(jsonString);
 		} catch (ParserConfigurationException e) {
@@ -123,28 +157,29 @@ public class ElmoParser {
 	 * @param courses
 	 */
 	private void selectCourses(Elmo elmo, List<String> courses) {
-		if ((courses != null)  && (courses.size() > 0)) {
-	    List<Elmo.Report> reports = elmo.getReport();
-	    log.debug("reports: " + reports.size());
-	    for (Elmo.Report report : reports) {
-	        ArrayList<LearningOpportunitySpecification> losList = new ArrayList<LearningOpportunitySpecification>();
-	        List<LearningOpportunitySpecification> tempList = report.getLearningOpportunitySpecification();
-	        for (LearningOpportunitySpecification los : tempList) {
-	            getAllLearningOpportunities(los, losList);
-	        }
+		if (courses != null) { 
+			List<Elmo.Report> reports = elmo.getReport();
+			log.debug("reports: " + reports.size());
+			for (Elmo.Report report : reports) {
+				ArrayList<LearningOpportunitySpecification> losList = new ArrayList<LearningOpportunitySpecification>();
+				List<LearningOpportunitySpecification> tempList = report.getLearningOpportunitySpecification();
+				for (LearningOpportunitySpecification los : tempList) {
+					getAllLearningOpportunities(los, losList);
+				}
 
-	        //log.debug("templist size: " + tempList.size() + "; losList size: " + losList.size());
-	        tempList.clear();
-	        //log.debug("templist cleared: " + tempList.size());
-	        for (LearningOpportunitySpecification spec : losList) {
-	            List<LearningOpportunitySpecification.Identifier> identifiers = spec.getIdentifier();
-	            for (LearningOpportunitySpecification.Identifier id : identifiers) {
-	                if(courses.contains(id.getValue())) {
-	                    tempList.add(spec);
-	                }
-	            }
-	        }
-	    }
+				// log.debug("templist size: " + tempList.size() + "; losList
+				// size: " + losList.size());
+				tempList.clear();
+				// log.debug("templist cleared: " + tempList.size());
+				for (LearningOpportunitySpecification spec : losList) {
+					List<LearningOpportunitySpecification.Identifier> identifiers = spec.getIdentifier();
+					for (LearningOpportunitySpecification.Identifier id : identifiers) {
+						if (courses.contains(id.getValue())) {
+							tempList.add(spec);
+						}
+					}
+				}
+			}
 		}
 	}
 	
@@ -199,6 +234,32 @@ public class ElmoParser {
 	}
 
 	/**
+	 * Count ECTS points for Elmo report.
+	 * 
+	 * Wunder why getETCSCount() build to return integer whe ETCS is fraction walues?
+	 * 
+	 * @since EMREX-17
+	 * @author z6cxh
+	 */
+	public float getETCSCountAsFloat() {
+		BigDecimal etcsCount = BigDecimal.ZERO;
+		List<Report> reports = this.elmo.getReport();
+		for (Report report : reports) {
+			List<LearningOpportunitySpecification> learningOpportunitySpecifications = report
+					.getLearningOpportunitySpecification();
+			for (LearningOpportunitySpecification learningOpportunitySpecification : learningOpportunitySpecifications) {
+				Specifies specifies = learningOpportunitySpecification.getSpecifies();
+				List<Credit> credits = specifies.getLearningOpportunityInstance().getCredit();
+				for (Credit credit : credits) {
+					if ("ECTS".equalsIgnoreCase(credit.getScheme()) && credit!=null) {
+						etcsCount = etcsCount.add(credit.getValue());
+					}
+				}
+			}
+		}
+		return etcsCount.floatValue();
+	}
+	/**
 	 * Get number of courses from Elmo report
 	 * 
 	 * @return number of courses from Elmo report
@@ -211,7 +272,7 @@ public class ElmoParser {
 			List<LearningOpportunitySpecification> learningOpportunitySpecifications = report
 					.getLearningOpportunitySpecification();
 			for (LearningOpportunitySpecification learningOpportunitySpecification : learningOpportunitySpecifications) {
-				if ("module".equals(learningOpportunitySpecification.getType())) {
+				if ("Course".equals(learningOpportunitySpecification.getType())) {
 					coursesCount += 1;
 				}
 			}
@@ -282,11 +343,14 @@ public class ElmoParser {
 			
 			m.marshal(elmo, out);
 			xml = out.toString();
+			
+			xml = ElmoParser.giveEctsValueTwoDecimal(xml);
 		} catch (JAXBException e) {
 			log.error("Error marshalling Elmo", e);
 		}
 		return xml;
 	}
+	
 	
 	public static class ElmoAsDefaultNamespaceMapper extends NamespacePrefixMapper {
 
@@ -328,4 +392,28 @@ public class ElmoParser {
 
 		return hostInstitution;
 	}
+	
+	/**
+	 * Make ECTS value have excatly 2 decimal (I know this misarable - but with my lack of jaxb knowlage - this the only way I could fix this)
+	 * @since EMREX-25
+	 * @author z6cxh
+	 */
+	public static String giveEctsValueTwoDecimal(String s) {
+		List<String[]> toChange = new ArrayList<String[]>();
+
+		Pattern pattern = Pattern.compile("<value>\\d*.\\d*</value>");
+		Matcher matcher = pattern.matcher(s);
+		while (matcher.find()) {
+			String[] n = new String[] { s.substring(matcher.start(), matcher.end()),
+					s.substring(matcher.start() + 7, matcher.end() - 8) };
+			toChange.add(n);
+		}
+		for (String[] ns : toChange) {
+			double d = Double.parseDouble(ns[1]);
+			s = s.replaceAll(ns[0], String.format(Locale.ROOT, "<value>%.2f</value>", d));
+		}
+
+		return s;
+	}
+	
 }

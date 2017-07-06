@@ -7,11 +7,11 @@
   </appender>
   
   <appender name="FILE-SYSTEM-LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>/etc/emrex/logs/ncp.log</file>
+    <file>/etc/emrex/logs/technical.log</file>
     <append>true</append>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- daily rollover -->
-      <fileNamePattern>/etc/emrex/logs/ncp-%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>/etc/emrex/logs/technical-%d{yyyy-MM-dd}.log</fileNamePattern>
       <maxHistory>30</maxHistory>
     </rollingPolicy>
     <encoder>
@@ -25,15 +25,15 @@
   </appender>
   
 	<appender name="FILE-STATISTICAL" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>/etc/emrex/logs/statistical.log</file>
+		<file>/etc/emrex/logs/ncp.log</file>
     <append>true</append>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- monthly rollover -->
-      <fileNamePattern>/etc/emrex/logs/statistical-%d{yyyy-MM}.log</fileNamePattern>
+      <fileNamePattern>/etc/emrex/logs/ncp-%d{yyyy-MM}.log</fileNamePattern>
       <maxHistory>24</maxHistory>
     </rollingPolicy>
 		<encoder>
-			<pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n
+			<pattern>%msg%n
 			</pattern>
 		</encoder>
 	</appender>
@@ -51,7 +51,7 @@
 			<maxHistory>24</maxHistory>
 		</rollingPolicy>
 		<encoder>
-			<pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n
+			<pattern>%msg%n
 			</pattern>
 		</encoder>
 	</appender>

@@ -79,9 +79,12 @@ public class DataSign {
 		// document, so a URI of "" signifies that, and also specify the SHA1
 		// digest algorithm
 		// and the ENVELOPED Transform.
-		Reference ref = fac.newReference("", fac.newDigestMethod(DigestMethod.SHA1, null),
+		Reference ref = fac.newReference("", fac.newDigestMethod(DigestMethod.SHA256, null),
 				Collections.singletonList(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null)), null,
 				null);
+	//	Reference ref = fac.newReference("", fac.newDigestMethod(DigestMethod.SHA1, null),
+	//			Collections.singletonList(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null)), null,
+	//			null);
 
 		// Create the SignedInfo.
 		SignedInfo si = fac.newSignedInfo(
@@ -183,7 +186,7 @@ public class DataSign {
 
 			// Unmarshal the XMLSignature.
 			XMLSignature signature = fac.unmarshalXMLSignature(valContext);
-			System.out.println("--" + signature.getSignatureValue().getValue());
+
 			// Validate the XMLSignature.
 			valid = signature.validate(valContext);
 
@@ -272,7 +275,7 @@ public class DataSign {
 	private static final class X509KeySelector extends KeySelector {
 		public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method,
 				XMLCryptoContext context) throws KeySelectorException {
-			Iterator ki = keyInfo.getContent().iterator();
+			Iterator<XMLStructure> ki = keyInfo.getContent().iterator();
 			while (ki.hasNext()) {
 				XMLStructure info = (XMLStructure) ki.next();
 				if (!(info instanceof X509Data))

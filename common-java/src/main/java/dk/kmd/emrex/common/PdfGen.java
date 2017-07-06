@@ -136,12 +136,13 @@ public class PdfGen {
         p = new Paragraph();
         p.add(new Phrase(" "));
         document.add(p);
-        PdfPTable table = new PdfPTable(new float[]{15, 30, 15, 10, 10, 8, 8});
+        //PdfPTable table = new PdfPTable(new float[]{15, 30, 15, 10, 10, 8, 8});
+        PdfPTable table = new PdfPTable(new float[]{15, 30, 10, 10, 8, 8});
         table.setWidthPercentage(100);
 
         table.addCell(createHeaderCell("Code"));
         table.addCell(createHeaderCell("Title"));
-        table.addCell(createHeaderCell("Level"));
+        //table.addCell(createHeaderCell("Level"));
         table.addCell(createHeaderCell("Type"));
         table.addCell(createHeaderCell("Credits", Rectangle.ALIGN_RIGHT));
         table.addCell(createHeaderCell("Result", Rectangle.ALIGN_RIGHT));
@@ -150,7 +151,7 @@ public class PdfGen {
         for (ElmoResult res : doc.getResults()) {
             table.addCell(createCell(res.getCode()));
             table.addCell(createCell(res.getName()));
-            table.addCell(createCell(res.getLevel()));
+            //table.addCell(createCell(res.getLevel()));
             table.addCell(createCell(res.getType()));
             table.addCell(createCell(res.getCredits(), Rectangle.ALIGN_RIGHT));
             table.addCell(createCell(res.getResult(), Rectangle.ALIGN_RIGHT));
@@ -203,6 +204,7 @@ public class PdfGen {
     /**
      * Strip time from String with data.
      * @since EMRIX-10
+     * @author z6cxh
      */
     private String trimDate(String d){
     	if (d!=null && d.length() > 10)
